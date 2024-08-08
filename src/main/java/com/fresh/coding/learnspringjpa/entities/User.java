@@ -2,12 +2,10 @@ package com.fresh.coding.learnspringjpa.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -17,8 +15,8 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode
 @Getter
 @Setter
-@EntityListeners(AuditingEntityListener.class)
-public class User implements Serializable {
+@Builder
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,9 +35,36 @@ public class User implements Serializable {
     @Column(nullable = false)
     private Boolean active;
 
-    @CreatedDate
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "user")
+    @Builder.Default
+    private List<Feedback> feedbacks = new ArrayList<>();
+
+
+    @OneToMany(mappedBy = "user")
+    @Builder.Default
+    private List<Order> orders = new ArrayList<>();
+
+
+    @ManyToMany(mappedBy = "users")
+    @Builder.Default
+    private List<Role> roles = new ArrayList<>();
+
+    @PrePersist
+    public void beforeCreate() {
+        if (createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (updatedAt == null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    public void beforeUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

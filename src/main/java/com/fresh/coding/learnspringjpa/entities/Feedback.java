@@ -3,7 +3,6 @@ package com.fresh.coding.learnspringjpa.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
@@ -14,7 +13,8 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode
 @Getter
 @Setter
-public class Feedback implements Serializable {
+@Builder
+public class Feedback {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,6 +26,9 @@ public class Feedback implements Serializable {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
     @ManyToOne
     @JoinColumn
     private User user;
@@ -33,5 +36,21 @@ public class Feedback implements Serializable {
     @ManyToOne
     @JoinColumn(nullable = false)
     private Product product;
+
+
+    @PrePersist
+    public void beforeCreate() {
+        if (createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (updatedAt == null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    public void beforeUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 
 }

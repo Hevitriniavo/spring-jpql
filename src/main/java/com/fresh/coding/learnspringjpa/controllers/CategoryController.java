@@ -1,30 +1,38 @@
 package com.fresh.coding.learnspringjpa.controllers;
 
-import com.fresh.coding.learnspringjpa.dtos.CategoryForm;
-import com.fresh.coding.learnspringjpa.dtos.Paginate;
-import com.fresh.coding.learnspringjpa.entities.Category;
+import com.fresh.coding.learnspringjpa.dtos.category.CategorySummarized;
+import com.fresh.coding.learnspringjpa.dtos.category.CreateCategory;
+import com.fresh.coding.learnspringjpa.dtos.category.UpdateCategory;
 import com.fresh.coding.learnspringjpa.services.CategoryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@CrossOrigin
 @RequestMapping("/categories")
 @RequiredArgsConstructor
 public class CategoryController {
     private final CategoryService categoryService;
 
     @PostMapping
-    public List<Category> saveAllCategories(@RequestBody List<CategoryForm> categories) {
-        return categoryService.saveAllCategories(categories);
+    public CategorySummarized createCategory(@Valid @RequestBody CreateCategory toCreate) {
+        return categoryService.createCategory(toCreate);
+    }
+
+    @PutMapping
+    public CategorySummarized updateCategory(@Valid @RequestBody UpdateCategory toUpdate) {
+        return categoryService.updateCategory(toUpdate);
     }
 
     @GetMapping
-    public Paginate<List<Category>> findAllCategories(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return categoryService.jpaAllCategories(page, size);
+    public List<CategorySummarized> getAllCategories() {
+        return categoryService.findAllCategories();
+    }
+
+    @DeleteMapping("/{id}")
+    public CategorySummarized removeCategoryById(@PathVariable Long id) {
+        return categoryService.removeCategoryById(id);
     }
 }

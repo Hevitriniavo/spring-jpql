@@ -3,7 +3,7 @@ package com.fresh.coding.learnspringjpa.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Entity
 @Table
@@ -13,7 +13,8 @@ import java.io.Serializable;
 @EqualsAndHashCode
 @Getter
 @Setter
-public class OrderItem implements Serializable {
+@Builder
+public class OrderItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,4 +34,25 @@ public class OrderItem implements Serializable {
     @ManyToOne
     @JoinColumn(nullable = false)
     private Product product;
+
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void beforeCreate() {
+        if (createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (updatedAt == null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    public void beforeUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

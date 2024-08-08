@@ -1,16 +1,18 @@
 package com.fresh.coding.learnspringjpa.services;
 
-
-import com.fresh.coding.learnspringjpa.dtos.CategoryForm;
-import com.fresh.coding.learnspringjpa.dtos.Paginate;
-import com.fresh.coding.learnspringjpa.entities.Category;
+import com.fresh.coding.learnspringjpa.dtos.category.CategorySummarized;
+import com.fresh.coding.learnspringjpa.dtos.category.CreateCategory;
+import com.fresh.coding.learnspringjpa.dtos.category.UpdateCategory;
 
 import java.util.List;
 
+
 public interface CategoryService {
-    List<Category> saveAllCategories(List<CategoryForm> categories);
+    CategorySummarized createCategory(CreateCategory toCreate);
 
-    Paginate<List<Category>> findAllCategories(int page, int size);
+    CategorySummarized updateCategory(UpdateCategory toUpdate);
 
-    Paginate<List<Category>> jpaAllCategories(int page, int size);
+    List<CategorySummarized> findAllCategories();
+
+    CategorySummarized removeCategoryById(Long id);
 }

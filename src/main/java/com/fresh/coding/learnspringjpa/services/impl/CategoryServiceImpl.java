@@ -1,74 +1,70 @@
 package com.fresh.coding.learnspringjpa.services.impl;
 
-import com.fresh.coding.learnspringjpa.dtos.CategoryForm;
-import com.fresh.coding.learnspringjpa.dtos.PageInfo;
-import com.fresh.coding.learnspringjpa.dtos.Paginate;
-import com.fresh.coding.learnspringjpa.entities.Category;
+import com.fresh.coding.learnspringjpa.dtos.category.CategorySummarized;
+import com.fresh.coding.learnspringjpa.dtos.category.CreateCategory;
+import com.fresh.coding.learnspringjpa.dtos.category.UpdateCategory;
+import com.fresh.coding.learnspringjpa.exceptions.HttpNotFoundException;
 import com.fresh.coding.learnspringjpa.mappers.CategoryMapper;
 import com.fresh.coding.learnspringjpa.repositories.CategoryRepository;
+import com.fresh.coding.learnspringjpa.repositories.RepositoryFactory;
 import com.fresh.coding.learnspringjpa.services.CategoryService;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
-    @PersistenceContext
-    private final EntityManager entityManager;
-
-    private final CategoryRepository categoryRepository;
-
     private final CategoryMapper categoryMapper;
+    private final RepositoryFactory repositoryFactory;
+
+    private CategoryRepository getCategoryRepository() {
+        return repositoryFactory.getCategoryRepository();
+    }
 
     @Transactional
-    public List<Category> saveAllCategories(List<CategoryForm> categoryForms) {
-        var savedCategories = new ArrayList<Category>();
-        for (var categoryForm : categoryForms) {
-            var category = categoryForm.id() != null
-                    ? entityManager.find(Category.class, categoryForm.id())
-                    : new Category();
-            category = categoryMapper.toEntity(categoryForm);
-            savedCategories.add(category);
+    @Override
+    public CategorySummarized createCategory(CreateCategory toCreate) {
+        var category = categoryMapper.toEntity(toCreate);
+        var savedCategory = this.getCategoryRepository().save(category);
+        return categoryMapper.toSummary(savedCategory);
+    }
+
+    @Transactional
+    @Override
+    public CategorySummarized updateCategory(UpdateCategory toUpdate) {
+        if (toUpdate == null || toUpdate.getId() == null) {
+            throw new HttpNotFoundException("Category ID is missing");
         }
-        return categoryRepository.saveAll(savedCategories);
+
+        var categoryRepository = this.getCategoryRepository();
+        var existingCategory = categoryRepository.findById(toUpdate.getId())
+                .orElseThrow(() -> new HttpNotFoundException("Category with ID " + toUpdate.getId() + " not found"));
+
+        existingCategory.setName(toUpdate.getName());
+        existingCategory.setDescription(toUpdate.getDescription());
+
+        var savedCategory = categoryRepository.save(existingCategory);
+        return categoryMapper.toSummary(savedCategory);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<CategorySummarized> findAllCategories() {
+        return getCategoryRepository().findAllCategories();
     }
 
     @Override
-    public Paginate<List<Category>> findAllCategories(int page, int size) {
-        var categories = entityManager.createQuery("SELECT c FROM Category c", Category.class)
-                .setFirstResult(page * size)
-                .setMaxResults(size)
-                .getResultList();
-        var totalPages = (long) (entityManager.createQuery("SELECT COUNT(c) FROM Category c")
-                .getSingleResult());
-
-        var pageInfo = new PageInfo(
-                page < totalPages / size,
-                page > 0
-        );
-        return new Paginate<>(categories, pageInfo, totalPages);
-    }
-
-    public Paginate<List<Category>> jpaAllCategories(int page, int size) {
-        var pages = PageRequest.of(page, size);
-        var categories = categoryRepository.findAll(pages);
-        var totalPages = categoryRepository.count();
-
-        var pageInfo = new PageInfo(
-                page < totalPages / size,
-                page > 0
-        );
-        return new Paginate<>(
-                categories.getContent(),
-                pageInfo,
-                totalPages
-        );
+    public CategorySummarized removeCategoryById(Long id) {
+        var categoryRepository = getCategoryRepository();
+        var categoryOptional = categoryRepository.findById(id);
+        if (categoryOptional.isEmpty()) {
+            throw new HttpNotFoundException("Category with ID " + id + " not found");
+        }
+        var category = categoryOptional.get();
+        categoryRepository.deleteById(id);
+        return this.categoryMapper.toSummary(category);
     }
 }
